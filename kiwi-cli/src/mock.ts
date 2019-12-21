@@ -13,7 +13,8 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import { traverse, getProjectConfig, getLangDir } from './utils';
 const CONFIG = getProjectConfig();
-const { translate: googleTranslate } = require('google-translate')(CONFIG.googleApiKey);
+// const { translate: googleTranslate } = require('google-translate')(CONFIG.googleApiKey);
+const googleTranslate = require('google-translate-api');
 
 import { withTimeout, retry } from './utils';
 import { PROJECT_CONFIG } from './const';
@@ -21,12 +22,18 @@ import { PROJECT_CONFIG } from './const';
 function translateText(text, toLang) {
   return withTimeout(
     new Promise((resolve, reject) => {
-      googleTranslate(text, 'zh', PROJECT_CONFIG.langMap[toLang], (err, translation) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(translation.translatedText);
-        }
+      // googleTranslate(text, 'zh', PROJECT_CONFIG.langMap[toLang], (err, translation) => {
+      //   if (err) {
+      //     reject(err);
+      //   } else {
+      //     resolve(translation.translatedText);
+      //   }
+      // });
+
+      googleTranslate(text, { to: PROJECT_CONFIG.langMap[toLang] }).then(res => {
+        resolve(res.text);
+      }).catch(err =>{
+        reject(err);
       });
     }),
     5000
