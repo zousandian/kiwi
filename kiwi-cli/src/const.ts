@@ -8,7 +8,7 @@ export const PROJECT_CONFIG = {
   configFile: './.kiwi/config.json',
   defaultConfig: {
     srcLang: 'zh-CN',
-    distLangs: ['en-US', 'zh-TW'],
+    distLangs: ['en-US', 'zh-HK'],
     googleApiKey: ''
   },
   langMap: {

@@ -109,7 +109,7 @@ function writeTranslations(file, toLang, translations) {
  */
 async function translateFile(file, toLang) {
   const translations = await getTranslations(file, toLang);
-  const toLangDir = path.resolve(__dirname, `../${toLang}`);
+  const toLangDir = getLangDir(toLang);
   if (!fs.existsSync(toLangDir)) {
     fs.mkdirSync(toLangDir);
   }
