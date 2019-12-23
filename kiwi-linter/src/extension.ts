@@ -29,25 +29,12 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('vscode-i18n-linter.findAllI18N', findAllI18N));
   let targetStrs: TargetStr[] = [];
   let finalLangObj = {};
-
-  let activeEditor = vscode.window.activeTextEditor;
-  if (activeEditor) {
-    triggerUpdateDecorations(newTargetStrs => {
-      targetStrs = newTargetStrs;
-    });
-  }
-  const currentFilename = activeEditor.document.fileName;
   const suggestPageRegex = /\/pages\/\w+\/([^\/]+)\/([^\/\.]+)/;
-
   let suggestion = [];
-  if (currentFilename.includes('/pages/')) {
-    suggestion = currentFilename.match(suggestPageRegex);
-  }
-  if (suggestion) {
-    suggestion.shift();
-  }
-  /** 如果没有匹配到 Key */
-  if (!(suggestion && suggestion.length)) {
+
+  function getSuggestions (activeEditor) {
+    suggestion = []
+    const currentFilename = activeEditor.document.fileName;
     const names = slash(currentFilename).split('/') as string[];
     const fileName = _.last(names);
     const fileKey = fileName.split('.')[0].replace(new RegExp('-', 'g'), '_');
@@ -58,6 +45,16 @@ export function activate(context: vscode.ExtensionContext) {
       suggestion = [dir, fileKey];
     }
   }
+
+  let activeEditor = vscode.window.activeTextEditor;
+  if (activeEditor) {
+    triggerUpdateDecorations(newTargetStrs => {
+      targetStrs = newTargetStrs;
+      getSuggestions(activeEditor)
+    });
+  }
+ 
+
   context.subscriptions.push(vscode.commands.registerTextEditorCommand('vscode-i18n-linter.findI18N', findI18N));
 
   // 监听 langs/ 文件夹下的变化，重新生成 finalLangObj
@@ -287,6 +284,7 @@ export function activate(context: vscode.ExtensionContext) {
       if (editor) {
         triggerUpdateDecorations(newTargetStrs => {
           targetStrs = newTargetStrs;
+          getSuggestions(activeEditor)
         });
       }
     }, null)
