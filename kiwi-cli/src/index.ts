@@ -4,6 +4,7 @@ import * as commander from 'commander';
 import { initProject } from './init';
 import { sync } from './sync';
 import { exportMessages } from './export';
+import { importMessages } from './import';
 import { findUnUsed } from './unused';
 import { mockLangs } from './mock';
 import * as ora from 'ora';
@@ -24,11 +25,11 @@ function spining(text, callback) {
 commander
   .version('0.1.0')
   .option('--init', '初始化项目', { isDefault: true })
-  .option('--import [file] [lang]', '导入翻译文案')
-  .option('--export [lang]', '导出未翻译的文案')
-  .option('--sync', '同步各种语言的文案')
-  .option('--mock', '使用 Google 翻译')
-  .option('--unused', '导出未使用的文案')
+  .option('--sync', '使用 Google 翻译同步各种语言的文案')
+  .option('--export [lang]', '导出全部文案用于校对及修改')
+  .option('--import [file] [lang]', '导入修改翻译后的文案')
+  // .option('--mock', '使用 Google 翻译')
+  // .option('--unused', '导出未使用的文案')
   .parse(process.argv);
 
 if (commander.init) {
@@ -38,11 +39,11 @@ if (commander.init) {
 }
 
 if (commander.import) {
-  // importMessages();
+  importMessages();
 }
 
 if (commander.export) {
-  spining('导出未翻译的文案', () => {
+  spining('导出全部文案', () => {
     if (commander.export === true) {
       exportMessages();
     } else {

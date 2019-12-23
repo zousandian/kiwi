@@ -2,6 +2,7 @@
 /coverage
 /reports
 /built
+/dist
 /tmp
 .nyc_output/
 .awcache

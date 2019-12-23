@@ -12,6 +12,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 import { traverse, getProjectConfig, getLangDir } from './utils';
+import { tsvFormatRows } from 'd3-dsv';
 const CONFIG = getProjectConfig();
 // const { translate: googleTranslate } = require('google-translate')(CONFIG.googleApiKey);
 const googleTranslate = require('google-translate-api');
@@ -34,9 +35,10 @@ function translateText(text, toLang) {
         resolve(res.text);
       }).catch(err =>{
         reject(err);
+        console.log(err)
       });
     }),
-    5000
+    15000
   );
 }
 /**
@@ -71,7 +73,7 @@ async function mockCurrentLang(dstLang) {
   const texts = getSourceText();
   const distTexts = getDistText(dstLang);
   const untranslatedTexts = {};
-  const mocks = {};
+  const mocks = [];
   /** 遍历文案 */
   traverse(texts, (text, path) => {
     const distText = _.get(distTexts, path);
@@ -86,7 +88,7 @@ async function mockCurrentLang(dstLang) {
   /** 获取 Mocks 文案 */
   await Promise.all(translateAllTexts).then(res => {
     res.forEach(([key, translatedText]) => {
-      mocks[key] = translatedText;
+      mocks.push([key, translatedText]);
     });
     return mocks;
   });
@@ -98,8 +100,8 @@ async function mockCurrentLang(dstLang) {
  * @param mocks
  */
 function writeMockFile(dstLang, mocks) {
-  const fileContent = 'export default ' + JSON.stringify(mocks, null, 2);
-  const filePath = path.resolve(getLangDir(dstLang), 'mock.ts');
+  const fileContent = tsvFormatRows(mocks)
+  const filePath = path.resolve(getLangDir(dstLang), 'mock.csv');
   return new Promise((resolve, reject) => {
     fs.writeFile(filePath, fileContent, err => {
       if (err) {

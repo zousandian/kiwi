@@ -1,24 +1,28 @@
 /**
  * @author linhuiw
- * @desc 导入翻译文件
+ * @desc 翻译文件
  */
 require('ts-node').register({
   compilerOptions: {
     module: 'commonjs'
   }
 });
-import { readFileSync, writeFileSync } from 'fs';
+import * as fs from 'fs';
 import * as path from 'path';
-import { tsvParseRows } from 'd3-dsv';
 import * as _ from 'lodash';
+import { traverse, getProjectConfig, getLangDir } from './utils';
+
+import { readFileSync, writeFileSync } from 'fs';
+import { tsvParseRows } from 'd3-dsv';
 import { getAllMessages, getKiwiDir } from './utils';
 
-const file = process.argv[2];
-const lang = process.argv[3];
+const file = process.argv[3];
+const lang = process.argv[4];
+const CONFIG = getProjectConfig();
 
 function getMessagesToImport(file) {
   const content = readFileSync(file).toString();
-  const messages = tsvParseRows(content, ([key, value]) => {
+  const messages = tsvParseRows(content, ([key, zhValue, value]) => {
     try {
       // value 的形式和 JSON 中的字符串值一致，其中的特殊字符是以转义形式存在的，
       // 如换行符 \n，在 value 中占两个字符，需要转成真正的换行符。
@@ -36,47 +40,103 @@ function getMessagesToImport(file) {
     }
     rst[key] = value;
   });
+
   if (duplicateKeys.size > 0) {
-    const errorMessage = 'Duplicate messages detected: \n' + [...duplicateKeys].join('\n');
+    const errorMessage = 'Duplicate messages detected: \n' + Array.from(duplicateKeys).join('\n');
     console.error(errorMessage);
     process.exit(1);
   }
+
   return rst;
 }
 
-function sortObject(obj) {
-  const rst = {};
-  Object.keys(obj)
-    .sort()
-    .forEach(key => {
-      rst[key] = obj[key];
+/**
+ * 将翻译写入文件
+ * */
+let count = 0;
+function writeTranslations(file, toLang, translations) {
+  const fileNameWithoutExt = path.basename(file).split('.')[0];
+  const dstLangDir = getLangDir(toLang);
+  const dstFile = path.resolve(dstLangDir, file);
+  const { default: texts } = require(dstFile);
+  const rst = {
+    ...texts
+  };
+
+  traverse(texts, (text, path) => {
+    const key = fileNameWithoutExt + '.' + path;
+    // 使用 setWith 而不是 set，保证 numeric key 创建的不是数组，而是对象
+    // https://github.com/lodash/lodash/issues/1316#issuecomment-120753100
+    if (text !== translations[key]) {
+      count += 1;
+      _.setWith(rst, path, translations[key], Object);
+    }
+  });
+
+  const fileContent = 'export default ' + JSON.stringify(rst, null, 2);
+  const filePath = path.resolve(getLangDir(toLang), path.basename(file));
+  return new Promise((resolve, reject) => {
+    fs.writeFile(filePath, fileContent, err => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
     });
-  return rst;
+  });
 }
 
-function importMessages(file, lang) {
+function getTranslations() {
   const messagesToImport = getMessagesToImport(file);
   const allMessages = getAllMessages();
-  const translationFilePath = path.resolve(getKiwiDir(), `text_${lang}.json`);
-  const oldTranslations = require(translationFilePath);
   const newTranslations = {
-    ...oldTranslations
   };
-  let count = 0;
   _.forEach(messagesToImport, (message, key) => {
     if (allMessages.hasOwnProperty(key)) {
-      count++;
       newTranslations[key] = message;
     }
   });
-  if (count === 0) {
-    console.log('No messages need to be imported.');
-    return;
+  return newTranslations;
+}
+
+/**
+ * 翻译对应的文件
+ * @param file
+ * @param toLang
+ */
+function translateFile(file, toLang) {
+  const translations = getTranslations();
+  const toLangDir = path.resolve(__dirname, `../${toLang}`);
+  if (!fs.existsSync(toLangDir)) {
+    fs.mkdirSync(toLangDir);
   }
 
-  const fileContent = JSON.stringify(sortObject(newTranslations), null, 2);
-  writeFileSync(translationFilePath, fileContent);
-  console.log(`Imported ${count} message(s).`);
+  writeTranslations(file, toLang, translations);
 }
+
+function importMessages(callback?) {
+  const srcLangDir = getLangDir(CONFIG.srcLang);
+  fs.readdir(srcLangDir, (err, files) => {
+    if (err) {
+      console.error(err);
+    } else {
+      files = files.filter(file => file.endsWith('.ts') && file !== 'index.ts' && file !== 'mock.ts').map(file => file);
+      const translateFiles = toLang =>
+        Promise.all(
+          files.map(file => {
+            translateFile(file, toLang);
+          })
+        );
+
+      translateFiles(lang).then(() => {
+        console.log(`Imported ${count} message(s).`);
+      }).catch(err => {
+        console.log('Import fail: ' + err);
+      })
+    }
+  });
+
+}
+
 
 export { importMessages };

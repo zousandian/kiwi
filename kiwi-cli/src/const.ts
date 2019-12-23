@@ -12,7 +12,9 @@ export const PROJECT_CONFIG = {
     googleApiKey: ''
   },
   langMap: {
-    ['en-US']: 'en'
+    'en-US': 'en',
+    'zh-TW': 'zh-tw',
+    'zh-HK': 'zh-tw'
   },
   zhIndexFile: `import common from './common';
 
