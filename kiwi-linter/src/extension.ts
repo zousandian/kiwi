@@ -8,7 +8,7 @@ import * as randomstring from 'randomstring';
 import * as fs from 'fs-extra';
 import * as slash from 'slash2';
 import { getSuggestLangObj } from './getLangData';
-import { I18N_GLOB, DIR_ADAPTOR } from './const';
+import { I18N_GLOB, LANG_PREFIX } from './const';
 import { findAllI18N, findI18N } from './findAllI18N';
 import { findMatchKey } from './utils';
 import { triggerUpdateDecorations } from './chineseCharDecorations';
@@ -21,7 +21,7 @@ import { getConfiguration, getConfigFile } from './utils';
  * @param context
  */
 export function activate(context: vscode.ExtensionContext) {
-  if (!fs.existsSync(DIR_ADAPTOR) && !getConfigFile()) {
+  if (!fs.existsSync(LANG_PREFIX) && !getConfigFile()) {
     /** 存在配置文件则开启 */
     return;
   }
