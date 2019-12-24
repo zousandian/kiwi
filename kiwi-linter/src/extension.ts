@@ -34,11 +34,18 @@ export function activate(context: vscode.ExtensionContext) {
 
   function getSuggestions (activeEditor) {
     suggestion = []
+    const suggestPrefix = getConfiguration('suggestPrefix')
     const currentFilename = activeEditor.document.fileName;
     const names = slash(currentFilename).split('/') as string[];
     const fileName = _.last(names);
     const fileKey = fileName.split('.')[0].replace(new RegExp('-', 'g'), '_');
     const dir = names[names.length - 2].replace(new RegExp('-', 'g'), '_');
+
+    if (suggestPrefix) {
+      suggestion = [suggestPrefix, dir]
+      return
+    }
+
     if (dir === fileKey) {
       suggestion = [dir];
     } else {
