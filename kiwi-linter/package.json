@@ -1,9 +1,9 @@
 {
-	"name": "vscode-i18n-linter",
-	"displayName": "kiwi-linter",
+	"name": "vscode-i18n-linter-dgd",
+	"displayName": "kiwi-linter-dgd",
 	"description": "A VSCode extension to identify and extract string literals for js(x)/ts(x) files",
 	"version": "1.3.6",
-	"publisher": "undefinedvs",
+	"publisher": "alexzou",
 	"engines": {
 		"vscode": "^1.18.0"
 	},
@@ -127,8 +127,8 @@
 		"typescript": "^2.8.3"
 	},
 	"__metadata": {
-		"id": "c9a3c6be-62a2-427a-9629-2457638f74b7",
-		"publisherDisplayName": "undefinedvs",
-		"publisherId": "50bc286c-539e-4570-ab16-4a0c6d3fde24"
+		"id": "a51ae0c6-2d25-4f57-af76-b2c697d8e970",
+		"publisherDisplayName": "alexzou",
+		"publisherId": "f6c360a4-c516-40b4-a6e8-879e2ff2a0a9"
 	}
 }
