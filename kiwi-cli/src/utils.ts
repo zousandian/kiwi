@@ -6,6 +6,9 @@ import * as path from 'path';
 import * as _ from 'lodash';
 import * as fs from 'fs';
 import { PROJECT_CONFIG } from './const';
+const http = require('http');
+const https = require('https');
+
 /**
  * 获取语言资源的根目录
  */
@@ -109,4 +112,71 @@ function withTimeout(promise, ms) {
   return Promise.race([promise, timeoutPromise]);
 }
 
-export { getKiwiDir, getLangDir, traverse, retry, withTimeout, getAllMessages, getProjectConfig };
+function withDelay(promise, ms) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve(promise);
+    }, ms);
+  });
+}
+
+const request = async (url, method = 'GET', postData) => {
+  const lib = url.startsWith('https://') ? https : http;
+
+  const params = {
+    method,
+    headers: { 'content-type': 'application/json' }
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = lib.request(url, params, res => {
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        return reject(new Error(`Status Code: ${res.statusCode}`));
+      }
+
+      const data = [];
+
+      res.on('data', chunk => {
+        data.push(chunk);
+      });
+
+      res.on('end', () => resolve(Buffer.concat(data).toString()));
+    });
+
+    req.on('error', reject);
+
+    if (postData) {
+      req.write(JSON.stringify(postData));
+    }
+
+    // IMPORTANT
+    req.end();
+  });
+};
+
+/**
+ * 设置超时
+ * @param promise
+ * @param text
+ */
+function translateTextHK(text) {
+  return withDelay(
+    new Promise((resolve, reject) => {
+      request('http://mp.digitalgd.com.cn/api/open/r/opencc/Tran', 'POST', {
+        config_file: 's2hk',
+        text: text
+      })
+        .then((res: string) => {
+          const data = JSON.parse(res);
+          resolve(data.data.text);
+        })
+        .catch(err => {
+          reject(err);
+          console.log(err);
+        });
+    }),
+    500 * (Math.random() * 10)
+  );
+}
+
+export { getKiwiDir, getLangDir, traverse, retry, withTimeout, getAllMessages, getProjectConfig, translateTextHK };

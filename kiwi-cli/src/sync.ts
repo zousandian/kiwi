@@ -10,7 +10,7 @@ require('ts-node').register({
 import * as fs from 'fs';
 import * as path from 'path';
 import * as _ from 'lodash';
-import { traverse, getProjectConfig, getLangDir } from './utils';
+import { traverse, getProjectConfig, getLangDir, translateTextHK } from './utils';
 const CONFIG = getProjectConfig();
 const googleTranslate = require('google-translate-api');
 
@@ -18,14 +18,20 @@ import { withTimeout, retry } from './utils';
 import { PROJECT_CONFIG } from './const';
 
 function translateText(text, toLang) {
+  if (toLang.toLowerCase() === 'zh-hk') {
+    return translateTextHK(text);
+  }
+
   return withTimeout(
     new Promise((resolve, reject) => {
-      googleTranslate(text, { to: PROJECT_CONFIG.langMap[toLang] }).then(res => {
-        resolve(res.text);
-      }).catch(err =>{
-        reject(err);
-        console.log(err)
-      });
+      googleTranslate(text, { to: PROJECT_CONFIG.langMap[toLang] })
+        .then(res => {
+          resolve(res.text);
+        })
+        .catch(err => {
+          reject(err);
+          console.log(err);
+        });
     }),
     15000
   );
@@ -35,7 +41,7 @@ function translateText(text, toLang) {
  * */
 async function getTranslations(file, toLang) {
   const translations = {};
-  const untranslatedTexts = {}
+  const untranslatedTexts = {};
   const fileNameWithoutExt = path.basename(file).split('.')[0];
   const srcLangDir = getLangDir(CONFIG.srcLang);
   const distLangDir = getLangDir(toLang);
@@ -50,10 +56,10 @@ async function getTranslations(file, toLang) {
   traverse(texts, async (text, path) => {
     const key = fileNameWithoutExt + '.' + path;
     const distText = _.get(distTexts, path);
-    if (distText){
+    if (distText) {
       translations[key] = distText;
     } else {
-      untranslatedTexts[key]= text;
+      untranslatedTexts[key] = text;
     }
   });
 
