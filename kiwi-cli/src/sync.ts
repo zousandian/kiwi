@@ -70,7 +70,7 @@ async function getTranslations(file, toLang) {
 
   await Promise.all(translateAllTexts).then(res => {
     res.forEach(([key, translatedText]) => {
-      translations[key] = translatedText;
+      translations[String(key)] = translatedText;
     });
     return translations;
   });
